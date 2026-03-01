@@ -12,5 +12,8 @@ COPY src/ ./src/
 COPY main.py .
 COPY prompt.txt .
 
-RUN useradd -m appuser && chown -R appuser /app
+RUN useradd -m -u 1000 appuser && \
+    chown -R appuser:0 /app && \
+    chmod -R g+w /app
+
 USER appuser
