@@ -69,10 +69,12 @@ Instead of polling paperless-ngx periodically, you can run paper-llama in webhoo
 3. In paperless-ngx, go to **Workflows**.
 4. Create a new workflow:
     - **Name**: AI Processing
-    - **Trigger**: Document Added / Consumed
-    - **Action**: Invoke Webhook
+    - **Trigger**: Document Added
+    - **Action type**: Webhook
     - **Webhook URL**: `http://paper-llama:8000/webhook` (adjust host/port as needed)
-    - **Payload**: `{"document_id": {{ document_id }}}`
+    - **Use parameters for webhook body**:  Checked
+    - **Send webhook payload as JSON**: Checked
+    - **Webhook params**: `doc_url` / `{{ doc_url }}`
 
 This will trigger paper-llama immediately when a new document is added.
 

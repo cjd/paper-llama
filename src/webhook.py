@@ -1,4 +1,5 @@
 import uvicorn
+import re
 from fastapi import FastAPI, BackgroundTasks, HTTPException
 from pydantic import BaseModel
 from src.config import settings
@@ -10,13 +11,21 @@ from src.processor import process_single_document
 class WebhookPayload(BaseModel):
     document_id: int | None = None
     id: int | None = None
+    doc_url: str | None = None
 
     def get_id(self) -> int:
+        # Try to parse from doc_url first as requested
+        if self.doc_url:
+            # Matches IDs in URLs like .../documents/123 or .../documents/123/
+            match = re.search(r'/documents/(\d+)/?$', self.doc_url)
+            if match:
+                return int(match.group(1))
+            
         if self.document_id is not None:
             return self.document_id
         if self.id is not None:
             return self.id
-        raise ValueError("No document ID found in payload")
+        raise ValueError("No valid document ID or doc_url found in payload")
 
 
 def handle_webhook_task(doc_id: int, p_client: PaperlessClient, o_client: OllamaClient, dry_run: bool):
