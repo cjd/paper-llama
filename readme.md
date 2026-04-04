@@ -58,7 +58,23 @@ If you don't get any connection errors, you can proceed, else fix the URLs.
 
 3. Read section [About prompt](#About-prompt) below, modify the file `prompt.txt` and run with `--dry-run` until you are satisfied with the result. You can also remove `--dry-run` to see if document in paperless-ngx is updated correctly.
 
-Proceed by scheduling it to run periodically. You can run it as script on host using flags `--mode auto`, or even better, [with docker compose](##Deploying-in-docker).
+Proceed by scheduling it to run periodically. You can run it as script on host using flags `--mode auto` or use `--mode webhook` to have paperless-ngx trigger processing immediately after consumption.
+
+## Webhook mode
+
+Instead of polling paperless-ngx periodically, you can run paper-llama in webhook mode. In this mode, it starts a web server and waits for a POST request from paperless-ngx.
+
+1. Set `MODE=webhook` in your `.env` file (or environment).
+2. Ensure port `8000` (default) is exposed and accessible by paperless-ngx.
+3. In paperless-ngx, go to **Workflows**.
+4. Create a new workflow:
+    - **Name**: AI Processing
+    - **Trigger**: Document Added / Consumed
+    - **Action**: Invoke Webhook
+    - **Webhook URL**: `http://paper-llama:8000/webhook` (adjust host/port as needed)
+    - **Payload**: `{"document_id": {{ document_id }}}`
+
+This will trigger paper-llama immediately when a new document is added.
 
 
 ## About prompt

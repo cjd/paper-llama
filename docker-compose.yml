@@ -3,8 +3,9 @@ services:
     image: ghcr.io/tomasinjo/paper-llama:main
     container_name: paper-llama
     restart: unless-stopped
-    command: ["python", "main.py", "--mode", "auto"]
+    command: ["python", "main.py", "--mode", "${MODE:-auto}"]
     environment:
+      - MODE=${MODE:-auto}
       - PAPERLESS_URL=${PAPERLESS_URL}
       - PAPERLESS_TOKEN=${PAPERLESS_TOKEN}
       - OLLAMA_URL=${OLLAMA_URL}
@@ -15,6 +16,11 @@ services:
       - LOG_LEVEL=${LOG_LEVEL}
       - OCR_SOURCE=${OCR_SOURCE}
       - LLM_OCR_SOURCE_PAGE_LIMIT=${LLM_OCR_SOURCE_PAGE_LIMIT}
+      - WEBHOOK_HOST=${WEBHOOK_HOST:-0.0.0.0}
+      - WEBHOOK_PORT=${WEBHOOK_PORT:-8000}
+
+    ports:
+      - "${WEBHOOK_PORT:-8000}:${WEBHOOK_PORT:-8000}"
 
     volumes:
       - ./prompt.txt:/app/prompt.txt:ro
