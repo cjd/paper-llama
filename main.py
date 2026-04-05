@@ -1,36 +1,11 @@
 import argparse
 import sys
-import time
-from src.config import settings
+import threading
 from src.paperless_client import PaperlessClient
 from src.llm_client import OllamaClient
 from src.utils import logger, get_user_prompt
-from src.processor import process_single_document
+from src.processor import process_single_document, run_auto_mode
 from src.webhook import run_webhook_mode
-
-
-def run_auto_mode(p_client: PaperlessClient, o_client: OllamaClient, dry_run: bool):
-    """Continuous loop for docker usage"""
-    logger.info(f"Starting automatic mode (Interval: {settings.scan_interval}s)")
-    
-    while True:
-        try:
-            docs = p_client.get_documents_to_process()
-            
-            if not docs:
-                logger.info("No new documents found.")
-            else:
-                logger.info(f"Found {len(docs)} documents to process.")
-                p_client.refresh_metadata()
-                prompt = get_user_prompt(p_client)
-                for doc in docs:
-                    process_single_document(doc.id, prompt, p_client, o_client, dry_run)
-        
-        except Exception as e:
-            logger.error(f"Error in auto loop: {e}")
-        
-        logger.info(f"Sleeping for {settings.scan_interval} seconds...")
-        time.sleep(settings.scan_interval)
 
 
 def run():
@@ -62,6 +37,16 @@ def run():
         run_auto_mode(p_client, o_client, args.dry_run)
         
     elif args.mode == "webhook":
+        # Start auto mode in a background thread
+        logger.info("Starting auto mode in background...")
+        polling_thread = threading.Thread(
+            target=run_auto_mode, 
+            args=(p_client, o_client, args.dry_run),
+            daemon=True
+        )
+        polling_thread.start()
+        
+        # Start webhook mode (blocking)
         run_webhook_mode(p_client, o_client, args.dry_run)
 
 if __name__ == "__main__":
