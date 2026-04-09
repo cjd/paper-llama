@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     
     ollama_url: str
     ollama_model: str
+    ollama_num_ctx: int | None = None
     
     prompt_file: str = "prompt.txt"
     log_level: str = "INFO"
@@ -16,6 +17,9 @@ class Settings(BaseSettings):
     llm_ocr_source_page_limit: int
 
     scan_interval: int = 600  # seconds, default 10 minuts
+    
+    webhook_host: str = "0.0.0.0"
+    webhook_port: int = 8000
     
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 

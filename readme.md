@@ -16,6 +16,7 @@ PAPERLESS_TOKEN=0xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxab68
 
 OLLAMA_URL=http://ollama:11434
 OLLAMA_MODEL=gemma3:27b-32k
+OLLAMA_NUM_CTX=32768
 ```
 
 To use LLM for OCR extraction, set the following variables:
@@ -57,7 +58,25 @@ If you don't get any connection errors, you can proceed, else fix the URLs.
 
 3. Read section [About prompt](#About-prompt) below, modify the file `prompt.txt` and run with `--dry-run` until you are satisfied with the result. You can also remove `--dry-run` to see if document in paperless-ngx is updated correctly.
 
-Proceed by scheduling it to run periodically. You can run it as script on host using flags `--mode auto`, or even better, [with docker compose](##Deploying-in-docker).
+Proceed by scheduling it to run periodically. You can run it as script on host using flags `--mode auto` or use `--mode webhook` to have paperless-ngx trigger processing immediately after consumption.
+
+## Webhook mode
+
+Instead of polling paperless-ngx periodically, you can run paper-llama in webhook mode. In this mode, it starts a web server and waits for a POST request from paperless-ngx.
+
+1. Set `MODE=webhook` in your `.env` file (or environment).
+2. Ensure port `8000` (default) is exposed and accessible by paperless-ngx.
+3. In paperless-ngx, go to **Workflows**.
+4. Create a new workflow:
+    - **Name**: AI Processing
+    - **Trigger**: Document Added
+    - **Action type**: Webhook
+    - **Webhook URL**: `http://paper-llama:8000/webhook` (adjust host/port as needed)
+    - **Use parameters for webhook body**:  Checked
+    - **Send webhook payload as JSON**: Checked
+    - **Webhook params**: `doc_url` / `{{ doc_url }}`
+
+This will trigger paper-llama immediately when a new document is added.
 
 
 ## About prompt
@@ -89,7 +108,7 @@ You can find my prompt in [prompt.txt](prompt.txt).
 
 You can use any model supported by ollama and of course your hardware. Model gemma3:27b works great for me and consumes around 19GB of memory.
 
-[Don't forget to extend context token limit in ollama when deploying the model. By default it is only 2048, which is too low for larger documents](https://docs.ollama.com/faq#how-can-i-specify-the-context-window-size)
+By default, the context window size is set to 2048, which might be too low for larger documents. You can increase it by setting the `OLLAMA_NUM_CTX` environment variable.
 
 ## Deploying in docker
 
@@ -99,6 +118,7 @@ After you fine-tuned your prompt, you can deploy it in docker where paper-llama 
 2. Modify `.env`:
     - `OVERRIDE_EXISTING_TAGS=True`  --> controls if existing tags should be replaced with those provided by LLM. If set to False, the LLM tags will be added alongside the existing document tags in paperless-ngx.
     - `SCAN_INTERVAL=600`  --> How often to check for new documents in seconds
+    - `OLLAMA_NUM_CTX=32768`  --> (Optional) Ollama context window size. Default is 2048.
 3. Deploy it: `docker-compose up -d`
 4. Check the logs: `docker compose logs -fn 50`
 
